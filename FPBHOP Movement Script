@@ -1,0 +1,126 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+public class PlayerMove : MonoBehaviour
+{
+    public static float sensitivity = 5f;
+    public int Level;
+    public float Jumppwr;
+    public float speed;
+    public Rigidbody rb;
+    public Text speedtext;
+
+    void Start() {rb = GetComponent<Rigidbody>();}  
+     
+    void FixedUpdate()
+    {
+        // Moving The Player:
+        rb.velocity = new Vector3(0, rb.velocity.y, 0);
+        transform.Translate(Vector3.forward * speed * 1.5f * Time.deltaTime);
+
+        // Input Based Rotation and actions.
+        if ((Input.GetKey("a") && Input.GetKey("d")) || (Input.GetKey("left") && Input.GetKey("right"))) {
+            speed -= 0.04f;        
+        }
+
+        if (Input.GetKey("a") || Input.GetKey("left")) {
+            transform.Rotate(0f, -sensitivity, 0f);
+            speed += 0.02f;
+
+        }
+        if (Input.GetKey("d") || Input.GetKey("right")) {
+            transform.Rotate(0f, sensitivity, 0f);
+            speed += 0.02f;
+        }
+        
+        speed = Mathf.Clamp(speed, 4.5f, 2000f);
+        
+        if (Input.GetKey("escape")) {
+            SceneManager.LoadScene("Main Menu");
+        }
+        if (Input.GetKey("o")) {
+            speed += 1f;
+        }
+        if (Input.GetKeyDown("p")) {
+            rb.AddForce(Vector3.up * 80000f * Time.deltaTime);
+        }
+        if (transform.position.y < -2f) {
+            LevelLoad();
+        }
+        if (Input.GetKey("r")){
+            LevelLoad();
+        }
+        if (Level == 100) {
+            speedtext.text = "Speed: " + speed.ToString("F2") + "\nLevel: Endless";
+        }
+        else {
+            speedtext.text = "Speed: " + speed.ToString("F2") + "\nLevel: " + Level;
+        }
+    }
+
+    void OnCollisionEnter(Collision collision) {
+
+        string tag = collision.gameObject.tag;
+
+        switch (tag) {
+
+            case "Jump":
+                rb.AddForce(Vector3.up * Jumppwr * 3f * Time.deltaTime);
+            break;
+            
+            case "Death":
+                LevelLoad();
+            break;
+
+            case "Run":
+                speed *= 2;
+            break;
+
+            case "Stop":
+                speed = 5;
+            break;
+    
+            case "Ramp":
+                transform.Translate(Vector3.forward * 10f * Time.deltaTime);
+                rb.AddForce(Vector3.up * Jumppwr * 2f * Time.deltaTime);
+            break;
+
+            case "End":
+                if(Level == 13) {SceneManager.LoadScene("Main Menu"); }
+
+                else {
+                    Level += 1; 
+                    LevelLoad(); 
+                }
+            break;
+        }
+
+        if (collision.gameObject.tag != "Ramp") {
+            if (collision.transform.position.y + 0.7f < transform.position.y) {
+                rb.AddForce(Vector3.up * Jumppwr * Time.deltaTime);
+            }
+        }
+    }
+
+    void OnCollisionStay(Collision collision) {
+        if (collision.gameObject.tag != "Ramp") {
+            rb.AddForce(Vector3.up * Jumppwr * Time.deltaTime); 
+
+            if (collision.transform.position.y + 0.7f > transform.position.y) {
+                transform.position = new Vector3(transform.position.x, transform.position.y - 0.5f, transform.position.z);
+                speed -= 0.5f;
+            }
+        }
+         
+    }
+    void LevelLoad () {
+        if (Level == 100) {
+            SceneManager.LoadScene("Endless");
+        }
+        else {
+            SceneManager.LoadScene("Level " + Level);   
+        }
+    }
+}
